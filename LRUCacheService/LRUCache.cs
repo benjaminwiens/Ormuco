@@ -6,8 +6,9 @@ namespace LRUCacheService
 {
     public class LRUCache<T>
     {
-        private LinkedList<T> _cache = new LinkedList<T>();
-        private Dictionary<int, LinkedListNode<T>> _cacheReference = new Dictionary<int, LinkedListNode<T>>();
+        private LinkedList<T> _cacheLRU = new LinkedList<T>();
+        private Dictionary<int, T> _cacheLookup = new Dictionary<int, T>();
+        private Dictionary<T, int> _cacheReverseLookup = new Dictionary<T, int>(); //assumes values are unique
         private Timer _cacheTimer;
         private static int _cacheCapacity;
         private static int _cacheExpirationInMilliseconds;
@@ -23,39 +24,59 @@ namespace LRUCacheService
 
         public LinkedListNode<T> Get(int key)
         {
-            if(!_cacheReference.ContainsKey(key))
+            if(!_cacheLookup.ContainsKey(key))
             {
                 return null;
             }
-            LinkedListNode<T> found = _cache.Find(_cacheReference[key].Value);
-            //move node in linked list to front
-            _cache.Remove(found);
-            _cache.AddFirst(found);
+
+            //update LRU
+            LinkedListNode<T> found = _cacheLRU.Find(_cacheLookup[key]);
+            _cacheLRU.Remove(found);
+            _cacheLRU.AddFirst(found);
 
             _cacheTimer.Stop();
             _cacheTimer.Start();
             return found;
         }
 
-        public void Add(LinkedListNode<T> data)
+        public void Add(int key, T value)
         {
-            if(_cache.Count == _cacheCapacity) //cache is full
+            if(!_cacheLookup.ContainsKey(key) || !_cacheReverseLookup.ContainsKey(value)) //already in cache
             {
-                int lastKey = _cache.Last.GetHashCode();
-                _cache.RemoveLast(); //LRU node
-                _cacheReference.Remove(lastKey);
+                //update LRU
+                LinkedListNode<T> found = _cacheLRU.Find(_cacheLookup[key]);
+                _cacheLRU.Remove(found);
+                _cacheLRU.AddFirst(found);
+
+                _cacheTimer.Stop();
+                _cacheTimer.Start();
+                return;
             }
-            _cache.AddFirst(data);
-            int firstKey = _cache.First.GetHashCode();
-            _cacheReference.Add(firstKey,data);
+
+            if(_cacheLRU.Count == _cacheCapacity) //cache is full 
+            {
+                T LRUValue = _cacheLRU.Last.Value;
+                int LRUKey = _cacheReverseLookup[LRUValue]; 
+
+                //remove LRU nodes from all three data structures
+                _cacheLRU.RemoveLast(); //LRU node
+                _cacheLookup.Remove(LRUKey);
+                _cacheReverseLookup.Remove(LRUValue);
+            }
+
+            //add new node to all three data structures
+            _cacheLRU.AddFirst(value);
+            _cacheLookup.Add(key,value);
+            _cacheReverseLookup.Add(value,key);
+
             _cacheTimer.Stop();
             _cacheTimer.Start();
         }
 
         private void ClearCache(object source, ElapsedEventArgs e)
         {
-            _cache.Clear();
-            _cacheReference.Clear();
+            _cacheLRU.Clear();
+            _cacheLookup.Clear();
         }
     }
 }
