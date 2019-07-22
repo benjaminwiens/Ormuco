@@ -15,7 +15,7 @@ namespace NumberService.Tests
         [InlineData("1003.52","1003.52")]
         public void Equal(string num1, string num2)
         {
-            Assert.Equal(Number.CompareNumbers(num1,num2), string.Format("{0} is {1} {2}", num1, Number._EQUAL, num2));  
+            Assert.Equal(string.Format("{0} is {1} {2}", num1, Number._EQUAL, num2), Number.CompareNumbers(num1,num2));  
         }
 
         [Theory] //Inline data has num1 > num2 since it also tests num2 < num1
@@ -25,8 +25,8 @@ namespace NumberService.Tests
         [InlineData("5000.54","2000")]
         public void InEquality(string num1, string num2)
         {
-            Assert.Equal(Number.CompareNumbers(num1,num2), string.Format("{0} is {1} {2}", num1, Number._GREATER, num2));
-            Assert.Equal(Number.CompareNumbers(num2,num1), string.Format("{0} is {1} {2}", num2, Number._LESS, num1));  
+            Assert.Equal(string.Format("{0} is {1} {2}", num1, Number._GREATER, num2), Number.CompareNumbers(num1,num2));
+            Assert.Equal(string.Format("{0} is {1} {2}", num2, Number._LESS, num1), Number.CompareNumbers(num2,num1));  
         }
 
         [Theory]
@@ -38,7 +38,7 @@ namespace NumberService.Tests
         [InlineData(" "," ")]
         public void Error(string num1, string num2)
         {
-            Assert.Equal(Number.CompareNumbers(num1,num2), Number._ERROR);  
+            Assert.Equal(Number._ERROR, Number.CompareNumbers(num1,num2));  
         }
     }
 }
